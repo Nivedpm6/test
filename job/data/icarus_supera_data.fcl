@@ -1,0 +1,84 @@
+#include "services_icarus_simulation.fcl"
+#include "detsimmodules_ICARUS.fcl"
+#include "stage0_icarus_defs.fcl"
+#include "stage1_icarus_defs.fcl"
+#include "channelmapping_icarus.fcl"
+#include "supera_modules.fcl"
+
+process_name: SuperaData
+
+services:
+{
+	@table::icarus_detsim_services
+	@table::icarus_gen_services
+	IFDH: {}
+	IICARUSChannelMap: @local::icarus_channelmappinggservice
+}
+
+source:
+{
+	module_type: RootInput
+}
+
+physics:
+{
+
+ producers:
+ {
+	 rns: { module_type: RandomNumberSaver }
+	 # Reco producers
+	 @table::icarus_stage0_producers
+	 @table::icarus_stage1_producers
+ }
+ analyzers:
+ {
+   supera: @local::icarus_supera_data
+ }
+
+ simulate: [ rns ]
+ analyze: [supera]
+ out_stream: [ out1   ]
+
+ trigger_paths: [simulate]
+ end_paths:     [analyze]
+ #end_paths:     [analyze,out_stream]
+}
+
+
+outputs:
+{
+ out1:
+ {
+   module_type: RootOutput
+   fileName:    "larsoft.root"
+   dataTier:    "reco"
+   compressionLevel: 1
+   # skim output (if needed)
+   #outputCommands: [ "drop *",
+   #                  "keep *_mcreco_*_*",
+   #                 "keep recob::Hit*_gaushit_*_*"
+   #                ]
+
+	 # Only uncomment if selecting events with nu in active volume
+	 # SelectEvents: [simulate]
+ }
+}
+
+services.TFileService.fileName: "ana.root"
+
+services.message.destinations :
+{
+  STDCOUT:
+  {
+     type:      "cout"      #tells the message service to output this destination to cout
+     threshold: "INFO"      #tells the message service that this destination applies to WARNING and higher level messages
+     categories:
+     {
+       default:
+       {
+         limit:       1000  #don't print anything at the infomsg level except the explicitly named categories
+         reportEvery: 1
+       }
+     }
+  }
+}

@@ -1,0 +1,73 @@
+#include "services_icarus_simulation.fcl"
+
+process_name: Supera
+
+services:
+{
+  @table::icarus_g4_services
+  #PhotonVisibilityService:               @local::standard_library_vuv_prop_timing_photonvisibilityservice
+}
+
+source:
+{
+  module_type: RootInput
+}
+
+physics:
+{
+
+ producers:
+ { }
+ analyzers:
+ {
+	supera: {
+		module_type: "LArSoftSuperaDriver"
+		supera_params: "job/supera_mc_3d.fcl"
+		out_filename: "larcv.root"
+		unique_filename: false
+		stream: "mc"
+		Verbosity: 2
+	}
+ }
+
+ analyze:  [supera]
+ trigger_paths: []
+ end_paths:     [analyze]
+}
+
+outputs:
+{
+ out1:
+ {
+   module_type: RootOutput
+   fileName:    "larsoft.root"
+   dataTier:    "supera"
+   compressionLevel: 1
+   # skim output (if needed)
+   #outputCommands: [ "drop *",
+   #                  "keep *_mcreco_*_*",
+   #                 "keep recob::Hit*_gaushit_*_*"
+   #                ]
+ }
+}
+
+services.TFileService.fileName: "ana.root"
+services.Geometry:    @local::icarus_single_induction_nooverburden_geometry
+services.WireReadout: @local::icarus_single_induction_wire_readout
+
+services.message.destinations :
+{
+  STDCOUT:
+  {
+     type:      "cout"      #tells the message service to output this destination to cout
+     threshold: "INFO"      #tells the message service that this destination applies to WARNING and higher level messages
+     categories:
+     {
+       default:
+       {
+         limit:       1000  #don't print anything at the infomsg level except the explicitly named categories
+         reportEvery: 1
+       }
+     }
+  }
+}
